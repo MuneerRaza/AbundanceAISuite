@@ -1,0 +1,37 @@
+# FastAPI and server
+fastapi>=0.104.0
+uvicorn>=0.24.0
+python-multipart>=0.0.6
+pydantic>=2.4.0
+pydantic-settings>=2.0.3
+email-validator>=2.1.0
+
+# Authentication and security
+passlib>=1.7.4
+python-jose>=3.3.0
+bcrypt>=4.0.1
+python-dotenv>=1.0.0
+
+# MongoDB
+motor>=3.3.1
+pymongo>=4.5.0
+
+# LangChain and RAG components
+langchain>=0.0.335
+langchain-groq>=0.0.1
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.2
+tiktoken>=0.5.1
+
+# Document processing
+pypdf>=3.17.0
+unstructured>=0.10.30
+tabulate>=0.9.0
+openpyxl>=3.1.2
+python-docx>=0.8.11
+pandas>=2.1.0
+
+# Utilities
+python-dateutil>=2.8.2
+aiofiles>=23.2.1
+httpx>=0.25.0
