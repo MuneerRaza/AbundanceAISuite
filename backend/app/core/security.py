@@ -2,24 +2,20 @@ from datetime import datetime, timedelta
 from typing import Optional, Union, Dict, Any
 
 from jose import jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Verify a plain password against its hashed version
+    Verify a plain password against the stored password (which is also plain text in this dev setup).
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    return plain_password == hashed_password
 
 def get_password_hash(password: str) -> str:
     """
-    Hash a password with bcrypt
+    Return the plain password (no hashing for dev setup).
     """
-    return pwd_context.hash(password)
+    return password
 
 def create_access_token(
     subject: Union[str, Dict[str, Any]], expires_delta: Optional[timedelta] = None

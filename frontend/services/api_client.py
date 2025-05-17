@@ -143,7 +143,7 @@ def update_user_profile(update_data: Dict[str, Any]) -> Tuple[bool, str, Dict[st
         return False, f"Update failed: {str(e)}", {}
 
 # Chat API
-def create_chat_session(title: str) -> Tuple[bool, str, Dict[str, Any]]:
+def create_chat_session(title: Optional[str] = None) -> Tuple[bool, str, Dict[str, Any]]:
     """
     Create a new chat session
     
@@ -152,9 +152,13 @@ def create_chat_session(title: str) -> Tuple[bool, str, Dict[str, Any]]:
     """
     try:
         create_url = f"{get_api_url()}/chat/sessions"
+        payload = {}
+        if title: # Only include title if provided
+            payload["title"] = title
+
         response = requests.post(
             create_url,
-            json={"title": title},
+            json=payload, # Use the payload dictionary
             headers=get_auth_headers()
         )
         

@@ -2,13 +2,15 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
-
-import logging
 from contextlib import asynccontextmanager
+from datetime import datetime # Add this import
+import logging
 
 from app.core.config import settings
-from app.db.mongodb_utils import connect_to_mongodb, close_mongodb_connection
+from app.db.mongodb_utils import connect_to_mongodb, close_mongodb_connection, get_collection, USERS_COLLECTION
 from app.apis.endpoints import auth, users, admin, chat, upload
+from app.core.security import get_password_hash
+from app.db.models import UserRole
 
 # Configure logging
 logging.basicConfig(
@@ -20,9 +22,32 @@ logger = logging.getLogger(__name__)
 # Lifespan event handlers for database connection
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Connect to MongoDB on startup
+    logger.info("Application startup: Connecting to MongoDB...")
     await connect_to_mongodb()
+    
+    # Create initial admin user if not exists
+    logger.info("Checking for initial admin user...")
+    users_collection = await get_collection(USERS_COLLECTION)
+    admin_user = await users_collection.find_one({"email": settings.ADMIN_EMAIL})
+    if not admin_user:
+        logger.info(f"Admin user not found. Creating admin: {settings.ADMIN_EMAIL}")
+        hashed_password = get_password_hash(settings.ADMIN_PASSWORD) # Using plain text for dev
+        admin_data = {
+            "email": settings.ADMIN_EMAIL,
+            "password_hash": hashed_password,
+            "full_name": "Default Admin",
+            "role": UserRole.ADMIN,
+            "tokens_remaining": settings.DEFAULT_USER_TOKENS * 100, # Generous tokens for admin
+            "active": True,
+            "created_at": datetime.utcnow()
+        }
+        await users_collection.insert_one(admin_data)
+        logger.info(f"Admin user {settings.ADMIN_EMAIL} created successfully.")
+    else:
+        logger.info(f"Admin user {settings.ADMIN_EMAIL} already exists.")
+        
     yield
+    logger.info("Application shutdown: Closing MongoDB connection...")
     # Close MongoDB connection on shutdown
     await close_mongodb_connection()
 
@@ -77,10 +102,7 @@ app.include_router(
 # Root endpoint
 @app.get("/")
 async def root():
-    return {
-        "message": "Welcome to Abundance AI Suite API",
-        "documentation": "/docs",
-    }
+    return {"message": f"Welcome to {settings.PROJECT_NAME} API"}
 
 # Health check endpoint
 @app.get("/health")

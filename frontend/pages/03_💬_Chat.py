@@ -3,10 +3,8 @@ from datetime import datetime
 import time
 
 from services.api_client import create_chat_session, get_chat_sessions, get_chat_history, send_chat_message
-from utils.state_management import (
-    is_authenticated, set_current_chat, get_current_chat, 
-    set_chats, add_message_to_chat, get_chat_messages
-)
+from utils.state_management import initialize_session_state, is_authenticated, logout_user, get_auth_headers, get_api_url, get_current_chat, set_current_chat, set_chats, get_auth_token
+
 from components.chat_display import chat_interface, empty_chat_placeholder, chat_avatar_message
 
 # Set page configuration
@@ -61,6 +59,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
+    initialize_session_state()  # Initialize session state here
+
     # Redirect if not authenticated
     if not is_authenticated():
         st.warning("Please login to access the chat feature.")
@@ -146,7 +146,17 @@ def display_chat_sidebar():
     """Display chat list and controls in sidebar"""
     # New Chat button
     if st.button("➕ New Chat", use_container_width=True):
-        show_new_chat_dialog()
+        # Directly create chat without dialog
+        success, message, chat_data = create_chat_session() # No title passed
+        
+        if success:
+            # Update session state
+            st.session_state.chats.insert(0, chat_data)  # Add to beginning
+            set_current_chat(str(chat_data["_id"]))
+            st.success("New chat created!")
+            st.experimental_rerun() # Rerun to reflect changes
+        else:
+            st.error(f"Failed to create chat: {message}")
     
     st.markdown("<div class='chat-header'>Your Chats</div>", unsafe_allow_html=True)
     
@@ -273,38 +283,21 @@ def display_chat_window():
         else:
             st.error(f"Error: {error_message}")
 
-def show_new_chat_dialog():
-    """Show a dialog to create a new chat"""
-    st.session_state.show_new_chat = True
+def get_chat_messages(chat_id):
+    """Get messages for a specific chat from session state"""
+    return st.session_state.chat_messages.get(chat_id, [])
+
+def add_message_to_chat(chat_id, message, is_user):
+    """Add a message to the chat in session state"""
+    if chat_id not in st.session_state.chat_messages:
+        st.session_state.chat_messages[chat_id] = []
     
-    # Modal-like dialog
-    with st.container():
-        st.subheader("Create New Chat")
-        chat_title = st.text_input("Chat Title", value="New Chat", key="new_chat_title_input")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Cancel", key="cancel_new_chat"):
-                st.session_state.show_new_chat = False
-                st.experimental_rerun()
-        
-        with col2:
-            if st.button("Create", key="confirm_new_chat"):
-                if chat_title:
-                    # Create new chat via API
-                    success, message, chat_data = create_chat_session(chat_title)
-                    
-                    if success:
-                        # Update session state
-                        st.session_state.chats.insert(0, chat_data)  # Add to beginning
-                        set_current_chat(str(chat_data["_id"]))
-                        st.success("Chat created successfully!")
-                    else:
-                        st.error(f"Failed to create chat: {message}")
-                
-                # Reset state and refresh
-                st.session_state.show_new_chat = False
-                st.experimental_rerun()
+    # Append new message
+    st.session_state.chat_messages[chat_id].append({
+        "content": message,
+        "is_user": is_user,
+        "timestamp": datetime.now().isoformat()
+    })
 
 if __name__ == "__main__":
     main()

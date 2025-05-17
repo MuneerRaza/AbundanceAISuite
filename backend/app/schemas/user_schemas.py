@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -10,7 +10,8 @@ class UserCreate(BaseModel):
     password: str
     full_name: Optional[str] = None
     
-    @validator("password")
+    @field_validator("password")
+    @classmethod
     def password_min_length(cls, v):
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
@@ -25,7 +26,8 @@ class UserUpdate(BaseModel):
     active: Optional[bool] = None
     role: Optional[UserRole] = None
     
-    @validator("password")
+    @field_validator("password")
+    @classmethod
     def password_min_length(cls, v):
         if v is not None and len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
@@ -41,8 +43,9 @@ class UserOut(BaseModel):
     created_at: datetime
     active: bool
     
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {
+        "populate_by_name": True  # Updated from allow_population_by_field_name
+    }
 
 # Admin user manipulation schema
 class AdminUserCreate(UserCreate):

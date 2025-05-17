@@ -15,6 +15,9 @@ async def read_user_me(
     """
     Get current user profile
     """
+    # Ensure _id is a string for the response model validation
+    if "_id" in current_user and hasattr(current_user["_id"], "__str__"):
+        current_user["_id"] = str(current_user["_id"])
     return current_user
 
 @router.put("/me", response_model=UserOut)
@@ -26,9 +29,8 @@ async def update_user_me(
     Update current user profile
     """
     users_collection = await get_collection(USERS_COLLECTION)
-    
-    # Create update data
-    update_data = user_update.dict(exclude_unset=True, exclude={"role", "tokens_remaining"})
+      # Create update data
+    update_data = user_update.model_dump(exclude_unset=True, exclude={"role", "tokens_remaining"})
     
     # Hash password if provided
     if "password" in update_data and update_data["password"]:
@@ -44,6 +46,9 @@ async def update_user_me(
     
     # Return updated user
     updated_user = await users_collection.find_one({"_id": current_user["_id"]})
+    # Ensure _id is a string for the response model validation
+    if updated_user and "_id" in updated_user and hasattr(updated_user["_id"], "__str__"):
+        updated_user["_id"] = str(updated_user["_id"])
     return updated_user
 
 @router.get("/tokens", response_model=Dict[str, int])

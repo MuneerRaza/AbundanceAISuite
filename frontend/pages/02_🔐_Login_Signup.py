@@ -2,7 +2,7 @@ import streamlit as st
 import time
 
 from services.api_client import login_user, register_user, get_user_info
-from utils.state_management import set_auth_token, set_user_info, is_authenticated
+from utils.state_management import set_auth_token, set_user_info, is_authenticated, initialize_session_state
 
 # Set page configuration
 st.set_page_config(
@@ -53,6 +53,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
+    initialize_session_state()  # Initialize session state here
+
     # Check if user is already authenticated
     if is_authenticated():
         st.warning("You are already logged in.")
@@ -135,7 +137,7 @@ def main():
                     if success:
                         st.markdown("<div class='success-message'>Account created successfully! Please log in.</div>", unsafe_allow_html=True)
                         st.session_state.show_login = True
-                        st.experimental_rerun()
+                        st.rerun() # Changed from st.experimental_rerun()
                     else:
                         st.markdown(f"<div class='error-message'>{message}</div>", unsafe_allow_html=True)
         

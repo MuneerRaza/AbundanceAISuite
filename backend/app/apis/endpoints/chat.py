@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, List, Any, Optional
 from bson import ObjectId
+from datetime import datetime # Added for timestamp
 
 from app.apis.deps import get_current_active_user, check_token_availability
 from app.services.llm_service import (
@@ -31,9 +32,13 @@ async def create_new_chat_session(
     """
     Create a new chat session
     """
+    chat_title = session_data.title
+    if not chat_title:
+        chat_title = f"New Chat - {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
+    
     session_id = await create_chat_session(
         user_id=str(current_user["_id"]),
-        title=session_data.title
+        title=chat_title
     )
     
     # Get created session details

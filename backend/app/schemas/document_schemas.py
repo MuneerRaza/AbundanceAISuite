@@ -33,8 +33,9 @@ class DocumentOut(BaseModel):
     is_embedded: bool
     metadata: Optional[Dict[str, Any]] = None
     
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {
+        "populate_by_name": True  # Updated from allow_population_by_field_name
+    }
 
 # Document list response
 class DocumentList(BaseModel):

@@ -7,18 +7,17 @@ from enum import Enum
 # Custom Pydantic field for handling MongoDB ObjectId
 class PyObjectId(ObjectId):
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-        
-    @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid ObjectId")
-        return ObjectId(v)
-    
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(type="string")
+    def __get_pydantic_core_schema__(cls, _source_type, _handler):
+        from pydantic_core import core_schema
+        return core_schema.json_or_python_schema(
+            python_schema=core_schema.is_instance_schema(ObjectId),
+            json_schema=core_schema.str_schema(
+                pattern=r'^[0-9a-f]{24}$'
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda x: str(x), return_schema=core_schema.str_schema()
+            ),
+        )
 
 # Role enum for user roles
 class UserRole(str, Enum):
@@ -29,9 +28,10 @@ class UserRole(str, Enum):
 class MongoBaseModel(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     
-    class Config:
-        json_encoders = {ObjectId: str}
-        allow_population_by_field_name = True
+    model_config = {
+        "populate_by_name": True,  # Updated from allow_population_by_field_name
+        "arbitrary_types_allowed": True,
+    }
 
 # User model
 class UserModel(MongoBaseModel):
@@ -41,7 +41,7 @@ class UserModel(MongoBaseModel):
     tokens_remaining: int
     created_at: datetime = Field(default_factory=datetime.utcnow)
     full_name: Optional[str] = None
-    active: bool = True
+    active: bool = Field(default=True)
 
 # Chat Session model
 class ChatSessionModel(MongoBaseModel):

@@ -18,6 +18,7 @@ pymongo>=4.5.0
 
 # LangChain and RAG components
 langchain>=0.0.335
+langchain_community
 langchain-groq>=0.0.1
 faiss-cpu>=1.7.4
 sentence-transformers>=2.2.2

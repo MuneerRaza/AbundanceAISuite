@@ -4,7 +4,7 @@ from datetime import datetime
 
 # Chat session creation schema
 class ChatSessionCreate(BaseModel):
-    title: str = Field(..., min_length=1, max_length=100)
+    title: Optional[str] = Field(None, min_length=1, max_length=100)  # Made title optional
 
 # Chat session update schema
 class ChatSessionUpdate(BaseModel):
@@ -20,8 +20,9 @@ class ChatSessionOut(BaseModel):
     updated_at: datetime
     is_archived: bool
     
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {
+        "populate_by_name": True  # Updated from allow_population_by_field_name
+    }
 
 # Message creation schema
 class MessageCreate(BaseModel):
@@ -40,8 +41,9 @@ class MessageOut(BaseModel):
     tokens_used: int
     metadata: Optional[Dict[str, Any]] = None
     
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {
+        "populate_by_name": True  # Updated from allow_population_by_field_name
+    }
 
 # Message history request schema
 class MessageHistoryRequest(BaseModel):

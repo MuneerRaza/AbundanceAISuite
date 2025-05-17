@@ -69,7 +69,7 @@ def display_landing_page():
     # Hero image or logo
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("frontend/assets/logo.png", use_column_width=True)
+        st.image("assets/logo.png", use_container_width=True)
     
     # Feature highlights in columns
     st.markdown("<h2 class='feature-title'>Key Features</h2>", unsafe_allow_html=True)

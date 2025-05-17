@@ -1,269 +1,149 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-from bson import ObjectId
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from typing import List, Any, Dict, Optional
 
-from app.apis.deps import get_current_admin_user
-from app.db.mongodb_utils import get_collection, USERS_COLLECTION, TOKEN_USAGE_COLLECTION, DOCUMENTS_COLLECTION, CHAT_SESSIONS_COLLECTION, MESSAGES_COLLECTION
-from app.core.security import get_password_hash
-from app.services.token_service import add_tokens
-from app.schemas.user_schemas import AdminUserCreate, AdminUserUpdate, UserOut
-from app.schemas.token_schemas import TokenUpdate
-from app.schemas.admin_schemas import AdminDashboardStats, UpdateAnnouncementCreate, UpdateAnnouncementOut, UserStats, TokenUsageStats, StatsPeriod
+from app.apis.deps import get_current_admin_user 
+from app.schemas.user_schemas import UserOut, UserCreate # Assuming UserOut can be used for listing, UserCreate for admin creating user
+from app.schemas.admin_schemas import AdminUserUpdate, AdminTokenSettingsUpdate, AdminUserCreate # To be created or refined
+from app.schemas.document_schemas import DocumentUploadResponse # To be created or refined
+# Import CRUD functions for users, documents, tokens etc.
+# from app.crud import user_crud, document_crud, token_crud # Example
 
 router = APIRouter()
 
-@router.post("/users", response_model=UserOut)
-async def create_user(
-    user_data: AdminUserCreate,
-    admin_user: Dict = Depends(get_current_admin_user)
+# --- User Management Endpoints ---
+@router.post("/users", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def admin_create_user(
+    user_in: AdminUserCreate, # A specific schema for admin creating users
+    current_admin: Dict = Depends(get_current_admin_user)
 ):
     """
-    Create a new user (admin only)
+    Create a new user. Admin access required.
     """
-    users_collection = await get_collection(USERS_COLLECTION)
-    
-    # Check if user already exists
-    existing_user = await users_collection.find_one({"email": user_data.email})
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-    
-    # Create user
-    user_dict = user_data.dict()
-    user_dict["password_hash"] = get_password_hash(user_dict.pop("password"))
-    user_dict["created_at"] = datetime.utcnow()
-    
-    result = await users_collection.insert_one(user_dict)
-    created_user = await users_collection.find_one({"_id": result.inserted_id})
-    
-    return created_user
+    # user = await user_crud.create_user(user_in, is_admin_creation=True) # Placeholder
+    # if not user:
+    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists or invalid data")
+    # return user
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
 
 @router.get("/users", response_model=List[UserOut])
-async def list_users(
+async def admin_list_users(
     skip: int = 0,
     limit: int = 100,
-    admin_user: Dict = Depends(get_current_admin_user)
+    current_admin: Dict = Depends(get_current_admin_user)
 ):
     """
-    List all users (admin only)
+    Retrieve all users. Admin access required.
     """
-    users_collection = await get_collection(USERS_COLLECTION)
-    cursor = users_collection.find().skip(skip).limit(limit)
-    return await cursor.to_list(length=limit)
+    # users = await user_crud.get_users(skip=skip, limit=limit) # Placeholder
+    # return users
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
 
 @router.get("/users/{user_id}", response_model=UserOut)
-async def get_user(
+async def admin_get_user(
     user_id: str,
-    admin_user: Dict = Depends(get_current_admin_user)
+    current_admin: Dict = Depends(get_current_admin_user)
 ):
     """
-    Get a specific user (admin only)
+    Get a specific user by ID. Admin access required.
     """
-    users_collection = await get_collection(USERS_COLLECTION)
-    user = await users_collection.find_one({"_id": ObjectId(user_id)})
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    return user
+    # user = await user_crud.get_user_by_id(user_id) # Placeholder
+    # if not user:
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    # return user
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
 
 @router.put("/users/{user_id}", response_model=UserOut)
-async def update_user(
+async def admin_update_user(
     user_id: str,
-    user_update: AdminUserUpdate,
-    admin_user: Dict = Depends(get_current_admin_user)
+    user_update_data: AdminUserUpdate, 
+    current_admin: Dict = Depends(get_current_admin_user)
 ):
     """
-    Update a user (admin only)
+    Update a user's details (e.g., role, active status, token limits). Admin access required.
     """
-    users_collection = await get_collection(USERS_COLLECTION)
-    
-    # Check if user exists
-    user = await users_collection.find_one({"_id": ObjectId(user_id)})
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    # Create update data
-    update_data = user_update.dict(exclude_unset=True)
-    
-    # Hash password if provided
-    if "password" in update_data and update_data["password"]:
-        update_data["password_hash"] = get_password_hash(update_data.pop("password"))
-    
-    # Update user
-    if update_data:
-        await users_collection.update_one(
-            {"_id": ObjectId(user_id)},
-            {"$set": update_data}
-        )
-    
-    # Return updated user
-    updated_user = await users_collection.find_one({"_id": ObjectId(user_id)})
-    return updated_user
+    # updated_user = await user_crud.admin_update_user(user_id, user_update_data) # Placeholder
+    # if not updated_user:
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found or update failed")
+    # return updated_user
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(
+async def admin_delete_user(
     user_id: str,
-    admin_user: Dict = Depends(get_current_admin_user)
+    current_admin: Dict = Depends(get_current_admin_user)
 ):
     """
-    Delete a user (admin only)
+    Delete a user. Admin access required.
     """
-    users_collection = await get_collection(USERS_COLLECTION)
-    
-    # Check if user exists
-    user = await users_collection.find_one({"_id": ObjectId(user_id)})
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    # Cannot delete self
-    if str(user["_id"]) == str(admin_user["_id"]):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete self"
-        )
-    
-    # Delete user
-    await users_collection.delete_one({"_id": ObjectId(user_id)})
-    
-    return None
+    # success = await user_crud.delete_user(user_id) # Placeholder
+    # if not success:
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found or delete failed")
+    # return
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
 
-@router.post("/tokens", status_code=status.HTTP_200_OK)
-async def update_user_tokens(
-    token_update: TokenUpdate,
-    admin_user: Dict = Depends(get_current_admin_user)
+# --- RAG Document Management Endpoints ---
+@router.post("/rag/documents", response_model=DocumentUploadResponse)
+async def admin_upload_rag_document(
+    file: UploadFile = File(...),
+    current_admin: Dict = Depends(get_current_admin_user)
 ):
     """
-    Update a user's token balance (admin only)
+    Upload a document to the RAG system. Admin access required.
+    This will update the knowledge base for all users.
     """
-    # Apply token update
-    success = await add_tokens(
-        user_id=token_update.user_id,
-        tokens=token_update.tokens,
-        admin_id=str(admin_user["_id"]),
-        reason=token_update.reason
-    )
-    
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found or token update failed"
-        )
-    
-    # Get updated token balance
-    users_collection = await get_collection(USERS_COLLECTION)
-    user = await users_collection.find_one({"_id": ObjectId(token_update.user_id)})
-    
-    return {"user_id": token_update.user_id, "tokens_remaining": user.get("tokens_remaining", 0)}
+    # result = await rag_service.upload_and_process_document(file) # Placeholder
+    # return {"filename": file.filename, "status": "uploaded", "detail": result}
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
 
-@router.get("/stats", response_model=AdminDashboardStats)
-async def get_dashboard_stats(
-    period: StatsPeriod = StatsPeriod.MONTH,
-    admin_user: Dict = Depends(get_current_admin_user)
+@router.get("/rag/documents", response_model=List[Any]) # Define a proper response model later
+async def admin_list_rag_documents(
+    current_admin: Dict = Depends(get_current_admin_user)
 ):
     """
-    Get admin dashboard statistics
+    List all documents in the RAG system. Admin access required.
     """
-    # Calculate date ranges based on period
-    now = datetime.utcnow()
-    if period == StatsPeriod.DAY:
-        start_date = now - timedelta(days=1)
-    elif period == StatsPeriod.WEEK:
-        start_date = now - timedelta(days=7)
-    elif period == StatsPeriod.MONTH:
-        start_date = now - timedelta(days=30)
-    elif period == StatsPeriod.YEAR:
-        start_date = now - timedelta(days=365)
-    else:  # ALL
-        start_date = datetime.min
-    
-    # Get collections
-    users_collection = await get_collection(USERS_COLLECTION)
-    token_usage_collection = await get_collection(TOKEN_USAGE_COLLECTION)
-    documents_collection = await get_collection(DOCUMENTS_COLLECTION)
-    chat_sessions_collection = await get_collection(CHAT_SESSIONS_COLLECTION)
-    messages_collection = await get_collection(MESSAGES_COLLECTION)
-    
-    # User stats
-    total_users = await users_collection.count_documents({})
-    
-    # Active users (users with messages in the period)
-    active_user_ids = await messages_collection.distinct(
-        "user_id", 
-        {"timestamp": {"$gte": start_date}}
-    )
-    active_users = len(active_user_ids)
-    
-    # User growth rate (simplified)
-    new_users = await users_collection.count_documents({
-        "created_at": {"$gte": start_date}
-    })
-    
-    user_growth_rate = (new_users / total_users) * 100 if total_users > 0 else 0
-    
-    # Token usage stats
-    token_usage_pipeline = [
-        {"$match": {"timestamp": {"$gte": start_date}}},
-        {"$group": {"_id": None, "total": {"$sum": "$tokens_used"}}}
-    ]
-    token_usage_result = await token_usage_collection.aggregate(token_usage_pipeline).to_list(length=1)
-    total_tokens_used = token_usage_result[0]["total"] if token_usage_result else 0
-    
-    # User breakdown of token usage
-    user_breakdown_pipeline = [
-        {"$match": {"timestamp": {"$gte": start_date}}},
-        {"$group": {"_id": "$user_id", "total": {"$sum": "$tokens_used"}}},
-        {"$sort": {"total": -1}},
-        {"$limit": 10}  # Top 10 users
-    ]
-    user_breakdown_result = await token_usage_collection.aggregate(user_breakdown_pipeline).to_list(length=10)
-    user_breakdown = {str(item["_id"]): item["total"] for item in user_breakdown_result}
-    
-    # Daily usage
-    daily_usage_pipeline = [
-        {"$match": {"timestamp": {"$gte": start_date}}},
-        {"$group": {
-            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}},
-            "total": {"$sum": "$tokens_used"}
-        }},
-        {"$sort": {"_id": 1}}
-    ]
-    daily_usage_result = await token_usage_collection.aggregate(daily_usage_pipeline).to_list(length=100)
-    daily_usage = {item["_id"]: item["total"] for item in daily_usage_result}
-    
-    # Recent uploads and chats
-    recent_uploads = await documents_collection.count_documents({
-        "upload_date": {"$gte": start_date}
-    })
-    
-    recent_chats = await messages_collection.count_documents({
-        "timestamp": {"$gte": start_date}
-    })
-    
-    return {
-        "token_usage": {
-            "total_tokens_used": total_tokens_used,
-            "time_period": period,
-            "user_breakdown": user_breakdown,
-            "daily_usage": daily_usage
-        },
-        "user_stats": {
-            "total_users": total_users,
-            "active_users": active_users,
-            "user_growth_rate": user_growth_rate
-        },
-        "recent_uploads": recent_uploads,
-        "recent_chats": recent_chats
-    }
+    # documents = await rag_service.list_documents() # Placeholder
+    # return documents
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
+
+@router.delete("/rag/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def admin_delete_rag_document(
+    document_id: str, # Or filename, depending on how RAG service identifies docs
+    current_admin: Dict = Depends(get_current_admin_user)
+):
+    """
+    Delete a document from the RAG system. Admin access required.
+    """
+    # success = await rag_service.delete_document(document_id) # Placeholder
+    # if not success:
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found or delete failed")
+    # return
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
+
+# --- Token Management Endpoints ---
+@router.put("/tokens/settings/{user_id}", response_model=UserOut) # Or a specific token settings response
+async def admin_set_user_token_limits(
+    user_id: str,
+    token_settings: AdminTokenSettingsUpdate, # Schema for updating token limits
+    current_admin: Dict = Depends(get_current_admin_user)
+):
+    """
+    Set token limits for a specific user. Admin access required.
+    """
+    # updated_user = await token_crud.set_user_token_limits(user_id, token_settings) # Placeholder
+    # if not updated_user:
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found or update failed")
+    # return updated_user
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
+
+# --- Usage Statistics Endpoints ---
+@router.get("/statistics/usage", response_model=List[Any]) # Define a proper response model later
+async def admin_view_usage_statistics(
+    current_admin: Dict = Depends(get_current_admin_user)
+):
+    """
+    View usage statistics (e.g., messages per user). Admin access required.
+    """
+    # stats = await usage_service.get_usage_statistics() # Placeholder
+    # return stats
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Endpoint not fully implemented")
