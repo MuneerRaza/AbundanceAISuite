@@ -12,6 +12,7 @@ CHUNK_SIZE = 1024
 CHUNK_OVERLAP = 256
 
 MODEL_ID = "llama3-8b-8192"
+SUMMARY_MODEL_ID = "llama3-8b-8192"
 
 # EMBEDDING_MODEL_ID = "BAAI/bge-m3"
 EMBEDDING_MODEL_ID = "nomic-ai/nomic-embed-text-v1.5"
@@ -19,4 +20,5 @@ MODEL_KWARGS = {'device': 'cpu', 'trust_remote_code': True}
 ENCODE_KWARGS = {"normalize_embeddings": True}
 
 
-K_LAST_MESSAGES=2
+SUMMARY_THRESHOLD = 8
+MESSAGES_TO_RETAIN = 4
