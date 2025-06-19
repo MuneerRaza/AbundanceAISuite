@@ -7,10 +7,12 @@ langchain-huggingface
 langchain-chroma
 langchain-groq
 langchain-tavily
-langmem
 python-dotenv
 pydantic
 einops
-unstructured[all-docs]
+langchain-nvidia-ai-endpoints
+docling
+langchain-docling
 fastapi
 uvicorn[standard]
+rank_bm25
